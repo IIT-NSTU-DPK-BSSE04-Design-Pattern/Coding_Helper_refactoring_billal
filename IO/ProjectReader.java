@@ -37,7 +37,7 @@ public class ProjectReader {
             String fileContent = new String(Files.readAllBytes(f), StandardCharsets.UTF_8).trim();
             String dir = f.getParent().toString().substring(f.getParent().toString().lastIndexOf(File.separator) + 1);
             String fileNameWithPackage = dir + "$" + f.getFileName().toString();
-            filename.add(f.toString()); // Store the full path
+            filename.add(f.toString()); 
 
             switch (projectType) {
                 case PROJECT_ONE:

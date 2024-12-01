@@ -12,125 +12,78 @@ import java.util.HashMap;
 
 public class TfIdfCalculate {
 
-    ArrayList<String> allterms = new ArrayList<>();
-    ArrayList<String> FileWord = new ArrayList<>(); //store all files one by one
-    ArrayList<String[]> FilesWords = new ArrayList<>(); //store all files one by one as a String array
-    HashMap<String, Double> idfmap = new HashMap<>();
+    private ArrayList<String> allTerms = new ArrayList<>();
+    private ArrayList<String> fileContents = new ArrayList<>();
+    private ArrayList<String[]> fileWordsList = new ArrayList<>();
+    private HashMap<String, Double> idfMap = new HashMap<>();
     public static ArrayList<String> queryTerms = new ArrayList<>();
     public static ArrayList<double[]> queryTfIdfVector = new ArrayList<>();
-    public static ArrayList<double[]> tfidfvectorProject = new ArrayList<>();
+    public static ArrayList<double[]> tfidfVectors = new ArrayList<>();
 
-    public void fileRead(String path) throws IOException {
+    public void readFiles(String directoryPath) throws IOException {
+        File directory = new File(directoryPath);
+        File[] files = directory.listFiles();
 
-        File directoryPath = new File(path);
-        File fileList[] = directoryPath.listFiles();
-        for (File file : fileList) {
-
+        for (File file : files) {
             if (file.getName().endsWith(".txt")) {
-              //  System.out.println("" + file.getName());
-                String filePath = path + "\\" + file.getName();
-                Path p = Paths.get(filePath);
-                byte[] filecontent = Files.readAllBytes(p);
-                String fileContent = new String(filecontent, StandardCharsets.UTF_8).trim();
-                //  System.out.println(""+fileContent);
-                String[] allterm = fileContent.split(" ");
-                //  for(int i=0;i<allterm.length;i++){
-                //     System.out.println(""+allterm[i]);
-                //    }
-                for (String terms : allterm) {
-                    // System.out.println(""+terms);
-                    if (!allterms.contains(terms)) {
-                        allterms.add(terms);
+                Path filePath = Paths.get(directoryPath, file.getName());
+                String content = Files.readString(filePath, StandardCharsets.UTF_8).trim();
+                String[] terms = content.split(" ");
+                for (String term : terms) {
+                    if (!allTerms.contains(term)) {
+                        allTerms.add(term);
                     }
                 }
-                FileWord.add(fileContent.trim());
-                FilesWords.add(allterm);
+                fileContents.add(content);
+                fileWordsList.add(terms);
             }
-
         }
-
     }
 
-    public void Idfcal() {
-        double idf;
-        for (String term : allterms) {
-            idf = new getTfIdf().getIdf(FileWord, term);
-            idfmap.put(term, idf);
-
+    public void calculateIdf() {
+        getTfIdf tfIdfCalculator = new getTfIdf();
+        for (String term : allTerms) {
+            double idf = tfIdfCalculator.getIdf(fileContents, term);
+            idfMap.put(term, idf);
         }
-//for(HashMap.Entry<String,Double> pair:idfmap.entrySet()){
-        //   System.out.println(pair.getKey()+"="+pair.getValue());
-//}
     }
 
-    public void UniqueQueryTerms(String processQuery) {
-        String[] queryTerm = processQuery.trim().split(" ");
-        for (String term : queryTerm) {
-            //     System.out.println("term=" + term);
+    public void extractUniqueQueryTerms(String query) {
+        String[] terms = query.trim().split(" ");
+        for (String term : terms) {
             if (!queryTerms.contains(term)) {
-                // System.out.println("p=="+term);
                 queryTerms.add(term);
             }
-
         }
-
     }
 
-    public void ProjectTfIdfCal() {
+    public void calculateProjectTfIdf() {
+        getTfIdf tfIdfCalculator = new getTfIdf();
 
-        double tf;
-        double idf;
-        double tfidf;
+        for (String[] fileWords : fileWordsList) {
+            double[] tfidfVector = new double[queryTerms.size()];
+            int index = 0;
 
-        for (String[] fileword : FilesWords) {
-            int count = 0;
-
-            double[] tfidfvector = new double[queryTerms.size()];
             for (String term : queryTerms) {
-                tf = new getTfIdf().getTf(fileword, term);
-                if (idfmap.containsKey(term)) {
-                    idf = idfmap.get(term);
-
-                } else {
-                    idf = 0;
-                }
-                tfidf = tf * idf;
-                //  System.out.println("pro="+tfidf);
-                tfidfvector[count] = tfidf;
-                count++;
-
+                double tf = tfIdfCalculator.getTf(fileWords, term);
+                double idf = idfMap.getOrDefault(term, 0.0);
+                tfidfVector[index++] = tf * idf;
             }
-            tfidfvectorProject.add(tfidfvector);
+            tfidfVectors.add(tfidfVector);
         }
-
     }
 
-    public void queryTfIdfCal(String processQuery) {
-        String[] queryTerm = processQuery.trim().split(" ");
-        double Tf;
-        double Idf = 0;
-        double queryTfIdf = 0;
-        int count = 0;
-        double[] queryvector = new double[queryTerms.size()];
-        for (String q : queryTerms) {
-            //  System.out.println("q=" + q);
-            Tf = new getTfIdf().getTf(queryTerm, q);
-            //  System.out.println("tf="+Tf);
-            if (idfmap.containsKey(q)) {
-                Idf = idfmap.get(q);
-                //     System.out.println("idf="+Idf);
-            } else {
-                Idf = 0;
+    public void calculateQueryTfIdf(String query) {
+        String[] queryWords = query.trim().split(" ");
+        getTfIdf tfIdfCalculator = new getTfIdf();
+        double[] queryVector = new double[queryTerms.size()];
+        int index = 0;
 
-            }
-            queryTfIdf = Tf * Idf;
-            //   System.out.println("tfidf=" + queryTfIdf);
-            queryvector[count] = queryTfIdf;
-            count++;
+        for (String term : queryTerms) {
+            double tf = tfIdfCalculator.getTf(queryWords, term);
+            double idf = idfMap.getOrDefault(term, 0.0);
+            queryVector[index++] = tf * idf;
         }
-        // System.out.println("p");
-        queryTfIdfVector.add(queryvector);
-
+        queryTfIdfVector.add(queryVector);
     }
-
 }

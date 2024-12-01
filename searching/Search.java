@@ -6,132 +6,125 @@ import console.Command;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 
 public class Search {
-    public static ArrayList<String> ProjectFileName = new ArrayList<>();
-    public static void ProjectRead(String Projectpath, String processfilePath) throws IOException {
-        ArrayList<String> filename = new ArrayList<>();
-        Path folderToWalk = Paths.get(Projectpath);
-        Files.walkFileTree(folderToWalk, new SimpleFileVisitor<Path>() {
+    public static ArrayList<String> projectFileNames = new ArrayList<>();
 
+    public static void processProjectFiles(String projectPath, String processFilePath) throws IOException {
+        ArrayList<String> filenames = new ArrayList<>();
+        Path folderPath = Paths.get(projectPath);
+
+        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult visitFile(Path f, BasicFileAttributes attr) throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (file.getFileName().toString().endsWith(".java")) {
+                    String fileNameWithPackage = "";
+                    byte[] fileContentBytes = Files.readAllBytes(file);
+                    String fileContent = new String(fileContentBytes, StandardCharsets.UTF_8).trim();
+                    String filePath = file.getParent() + "\\" + file.getFileName();
+                    String directory = file.getParent().toString()
+                            .substring(file.getParent().toString().lastIndexOf(File.separator) + 1);
 
-                if (f.getFileName().toString().endsWith(".java")) {
-                    String fileNamewithPackage = "";
-                
-                    byte[] p = Files.readAllBytes(f);
-                    String content = new String(p, StandardCharsets.UTF_8).trim();
-                    String filePath = f.getParent() + "\\" + f.getFileName();
-                    String dir = f.getParent().toString().substring(f.getParent().toString().lastIndexOf(File.separator) + 1);
-        
-                    fileNamewithPackage = dir + "$" + f.getFileName().toString(); /
-                    filename.add(fileNamewithPackage);
-                    
-                    if (!fileNamewithPackage.isEmpty() && !content.isEmpty()) {
-                        
-                        new MethodFind().getMethod(fileNamewithPackage, content, filePath, processfilePath);
-                        new MethodFind().getConstructor(fileNamewithPackage, content, filePath, processfilePath);
+                    fileNameWithPackage = directory + "$" + file.getFileName();
+                    filenames.add(fileNameWithPackage);
+
+                    if (!fileNameWithPackage.isEmpty() && !fileContent.isEmpty()) {
+                        MethodFind methodFinder = new MethodFind();
+                        methodFinder.getMethod(fileNameWithPackage, fileContent, filePath, processFilePath);
+                        methodFinder.getConstructor(fileNameWithPackage, fileContent, filePath, processFilePath);
                     }
                 }
                 return FileVisitResult.CONTINUE;
-
             }
+        });
+
+        if (filenames.isEmpty()) {
+            System.out.println("\tProject does not contain any Java files.");
         }
-        );
-        if (filename.isEmpty()) {
-            System.out.println("\tProject doesnot have any java file");
+    }
+    public void processProject(String projectPath, String projectName) throws IOException {
+        String sanitizedPath = sanitizePath(projectPath);
+        String processFilePath = "H:\\2-1\\project\\ProcessAllFiles\\ProcessMethod$" + sanitizedPath;
+
+        File processFile = new File(processFilePath);
+        if (!processFile.exists()) {
+            Files.createDirectories(Paths.get(processFilePath));
+            processProjectFiles(projectPath, processFilePath);
         }
+
+        getProjectFileList(projectName);
     }
 
-    public void processProject(String projectpath, String Projectname) throws IOException {
-        String current = projectpath.replaceAll("\\\\", "-").replace(":", "");
-    
-        String processfilePath = "H:\\2-1\\project\\ProcessAllFiles" + "\\ProcessMethod$" + current;
-        File f1 = new File(processfilePath);
-        if (!f1.exists()) {
-            Path p1 = Paths.get(processfilePath);
-            Files.createDirectories(p1);
-            ProjectRead(projectpath, processfilePath);
-        
-        }
-        getProjectFile(Projectname);
-    }
-
-    
-    public String getProcessFilepath(String projectname){
-       String currentpath = Command.currentPath;
-    String path = new Command().pathGenerate(currentpath);    
-    String current = path.replaceAll("\\\\", "-").replace(":", "");
-    String Pathname = "H:\\2-1\\project\\ProcessAllFiles" + "\\ProcessMethod$" + current + "-" + projectname;
-    return Pathname;
-    
-    }
-    public void getProjectFile(String projectname) throws IOException {
-
-       String Pathname=getProcessFilepath(projectname);
-        ProjectReader.getFileList(projectname, Pathname, ProjectFileName);
-
-    }
-
-    public void getFile(String projectPath, String fileName) throws IOException {
+    public String getProcessFilePath(String projectName) {
         String currentPath = Command.currentPath;
-      String processfilePath=getProcessFilepath(fileName);
-        File f1 = new File(processfilePath);
-          File file = new File(currentPath + "\\" + fileName);
-      
+        String sanitizedPath = sanitizePath(new Command().pathGenerate(currentPath));
+        return "H:\\2-1\\project\\ProcessAllFiles\\ProcessMethod$" + sanitizedPath + "-" + projectName;
+    }
 
-        Path p = Paths.get(currentPath + "\\" + fileName);
-        if (file.getName().endsWith(".java") && !Files.isDirectory(p)) {
-            boolean fileEmpty=new Filereader().fileEmpty(p.toString());
-             byte[] s = Files.readAllBytes(p);
-            String fileContent = new String(s, StandardCharsets.UTF_8).trim();
-            if(fileEmpty){
-                System.out.println("File is Empty");
+
+    public void getProjectFileList(String projectName) throws IOException {
+        String processFilePath = getProcessFilePath(projectName);
+        ProjectReader.getFileList(projectName, processFilePath, projectFileNames);
+    }
+
+
+    public void processSingleFile(String projectPath, String fileName) throws IOException {
+        String currentPath = Command.currentPath;
+        String processFilePath = getProcessFilePath(fileName);
+        File file = new File(currentPath + "\\" + fileName);
+
+        if (file.getName().endsWith(".java") && !Files.isDirectory(file.toPath())) {
+            boolean isFileEmpty = new Filereader().fileEmpty(file.getAbsolutePath());
+            if (isFileEmpty) {
+                System.out.println("File is empty.");
+                return;
             }
-          
-         
-             else {
-                if (!f1.exists()) {
-                    Path p1 = Paths.get(processfilePath);
-                    Files.createDirectories(p1);
-                    new MethodFind().getMethod(file.getName(), fileContent, file.getAbsolutePath(), processfilePath);
-                    new MethodFind().getConstructor(file.getName(), fileContent, file.getAbsolutePath(), processfilePath);
-                   
-                }
-                
+
+            String fileContent = Files.readString(file.toPath(), StandardCharsets.UTF_8).trim();
+            File processDir = new File(processFilePath);
+
+            if (!processDir.exists()) {
+                Files.createDirectories(Paths.get(processFilePath));
+                MethodFind methodFinder = new MethodFind();
+                methodFinder.getMethod(file.getName(), fileContent, file.getAbsolutePath(), processFilePath);
+                methodFinder.getConstructor(file.getName(), fileContent, file.getAbsolutePath(), processFilePath);
             }
-            getProjectFile(file.getName());
-           
+
+            getProjectFileList(file.getName());
         }
     }
 
-    public void SearchingResult(String query, String projectPath) throws IOException {
-       
-        String processfilePath = "H:\\2-1\\project\\ProcessAllFiles" + "\\ProcessMethod$" + current;
-        String processquery = new ProcessSearchFile().queryProcess(query);
-        TfIdfCalculate ob = new TfIdfCalculate();
-        ob.fileRead(processfilePath);
-        ob.Idfcal();
-        ob.UniqueQueryTerms(processquery);
-        ob.queryTfIdfCal(processquery);
-        ob.ProjectTfIdfCal();
+
+    public void searchResults(String query, String projectPath) throws IOException {
+        String processFilePath = "H:\\2-1\\project\\ProcessAllFiles\\ProcessMethod$" + sanitizePath(projectPath);
+        String processedQuery = new ProcessSearchFile().queryProcess(query);
+
+        TfIdfCalculate tfIdf = new TfIdfCalculate();
+        tfIdf.fileRead(processFilePath);
+        tfIdf.Idfcal();
+        tfIdf.UniqueQueryTerms(processedQuery);
+        tfIdf.queryTfIdfCal(processedQuery);
+        tfIdf.ProjectTfIdfCal();
+
+        Similarity similarity = new Similarity();
+        similarity.getCosine();
+        similarity.getResult();
+
+        clearSearchData();
+    }
 
 
-        new Similarity().getCosine();
-        new Similarity().getResult();
-        ProjectFileName.clear();
+    private void clearSearchData() {
+        projectFileNames.clear();
         TfIdfCalculate.queryTerms.clear();
         TfIdfCalculate.queryTfIdfVector.clear();
         TfIdfCalculate.tfidfvectorProject.clear();
-
     }
 
+    private String sanitizePath(String path) {
+        return path.replaceAll("\\\\", "-").replace(":", "");
+    }
 }

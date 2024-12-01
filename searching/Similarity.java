@@ -26,7 +26,7 @@ public class Similarity {
                BigDecimal bd = new BigDecimal(similarity).setScale(2, RoundingMode.HALF_UP);
                 double getSimilar = bd.doubleValue();
                 
-//  System.out.println(Search.ProjectFileName.get(i) + "=" + similarity);
+
                 if (getSimilar > 0) {
                     SortDescending.put(Search.ProjectFileName.get(i), getSimilar);
 
@@ -47,8 +47,7 @@ public class Similarity {
                 .sorted(HashMap.Entry.comparingByValue(Comparator.reverseOrder()))
                 .forEachOrdered(x -> reverseSorted.put(x.getKey(), x.getValue()));
 
-        //System.out.println("");
-        // System.out.println("");
+
         for (Map.Entry<String, Double> pair : reverseSorted.entrySet()) {
 
             System.out.println(pair.getKey() + " " + pair.getValue()+"%");
