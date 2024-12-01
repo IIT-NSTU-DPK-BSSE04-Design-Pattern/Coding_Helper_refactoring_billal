@@ -7,22 +7,16 @@ public class Node implements Comparable<Node> {
 	public int freq;
 	public char letter;
 	public final char INTERIOR_NODE_CHAR = (char) 0x01;
-        
-        
          
-	
-        
 	public Node() {
 	}
 
-	
 	public Node(int freq) {
 		this.freq = freq;
 	
 		this.letter = INTERIOR_NODE_CHAR;
 	}
 
-	
 	public Node(char letter, int freq) {
 		this.left = null;
 		this.right = null;
@@ -30,7 +24,6 @@ public class Node implements Comparable<Node> {
 		this.letter = letter;
 	}
 
-	
 	@Override
 	public String toString() {
 		return this.letter + " => " + this.freq;
@@ -45,8 +38,6 @@ public class Node implements Comparable<Node> {
 			return -1;
 		}
 		return 0;
-	}
-
-	
+	}	
 
 }
