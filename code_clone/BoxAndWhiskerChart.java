@@ -68,7 +68,71 @@ public class BoxAndWhiskerChart {
             public Dimension getPreferredSize() {
                 return new Dimension(600, 600);
             }
-        });
+        });package code_clone;
+
+        import org.jfree.chart.ChartPanel;
+        import org.jfree.chart.JFreeChart;
+        import org.jfree.chart.axis.CategoryAxis;
+        import org.jfree.chart.axis.NumberAxis;
+        import org.jfree.chart.plot.CategoryPlot;
+        import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
+        import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
+        
+        import javax.swing.*;
+        import java.awt.*;
+        import java.util.List;
+        
+        public class BoxAndWhiskerChart {
+        
+            public void displayChart() {
+                EventQueue.invokeLater(() -> {
+                    JFrame frame = new JFrame("Clone Check");
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                    frame.add(createChartPanel());
+                    frame.pack();
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                });
+            }
+        
+            private JPanel createChartPanel() {
+                DefaultBoxAndWhiskerCategoryDataset dataset = createDataset();
+                JFreeChart chart = createChart(dataset);
+        
+                ChartPanel chartPanel = new ChartPanel(chart);
+                chartPanel.setPreferredSize(new Dimension(600, 600));
+                return chartPanel;
+            }
+        
+            private DefaultBoxAndWhiskerCategoryDataset createDataset() {
+                DefaultBoxAndWhiskerCategoryDataset dataset = new DefaultBoxAndWhiskerCategoryDataset();
+                for (int i = 0; i < CosineSimilarity.similarArray.size(); i++) {
+                    List<Double> data = CosineSimilarity.similarArray.get(i);
+                    String category = CloneCheck.ProjectFileName1.get(i);
+                    dataset.add(data, "First_Project vs Second_Project", category);
+                }
+                return dataset;
+            }
+        
+            private JFreeChart createChart(DefaultBoxAndWhiskerCategoryDataset dataset) {
+                CategoryAxis xAxis = new CategoryAxis("First Project Files");
+                NumberAxis yAxis = new NumberAxis("Second Project Values");
+                BoxAndWhiskerRenderer renderer = new BoxAndWhiskerRenderer();
+                renderer.setFillBox(true);
+                renderer.setMedianVisible(true);
+                renderer.setMeanVisible(false);
+        
+                CategoryPlot plot = new CategoryPlot(dataset, xAxis, yAxis, renderer);
+                return new JFreeChart(
+                        "Box-and-Whisker Plot",
+                        new Font("SansSerif", Font.BOLD, 20),
+                        plot,
+                        true
+                );
+            }
+        }
+        
+        
         f.pack();
         f.setLocationRelativeTo(null);
         f.setVisible(true);

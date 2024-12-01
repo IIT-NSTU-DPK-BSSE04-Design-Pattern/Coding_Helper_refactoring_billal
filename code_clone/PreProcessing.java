@@ -1,72 +1,67 @@
-package code_clone;
-
 import IO.Filewriter;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PreProcessing {
-    //  String stemWord="";
 
-    public String ProcessFile(String filename, String content,String p) throws IOException {
-        String stemWord = "";
-        String methodWithotPunctuation = removePunctuation(content);
-        String methodWithoutKey = removeKeyword(methodWithotPunctuation);
-        String methodWithoutSpace = removeSpace(methodWithoutKey);
-        Porter_stemmer stemmer = new Porter_stemmer();
-        String[] words = methodWithoutSpace.split(" ");
-        for (String word : words) {
-            String stem = stemmer.stemWord(word);
-            stemWord = stemWord + " " + stem;
-        }
+    public String processFile(String filename, String content, String outputPath) throws IOException {
+        String cleanedContent = cleanContent(content);
+        String stemmedContent = stemWords(cleanedContent);
 
-        //  System.out.println("" + stemWord.trim());
-        Filewriter writer = new Filewriter(); //fileWriter class objeect
-
-        String path = writer.createProcessFile(filename, stemWord.trim(),p);  //filename-filename with package
-
-        return path;
+        Filewriter writer = new Filewriter();
+        return writer.createProcessFile(filename, stemmedContent.trim(), outputPath);
     }
 
-    public String removePunctuation(String p) throws IOException {
-
-        //    for (int i = 0; i < method.size(); i++) {
-        //   System.out.println(""+method.get(i));
-        String methodWithoutPunctuation = p.replaceAll("\\p{Punct}", " ");
-        // System.out.println("" + removeMultipleSpaceAndLine(methodWithoutPunctuation));
-        return methodWithoutPunctuation;
+    private String cleanContent(String content) throws IOException {
+        String withoutPunctuation = removePunctuation(content);
+        String withoutKeywords = removeKeywords(withoutPunctuation);
+        return removeExtraSpaces(withoutKeywords);
     }
 
-   
-    public String removeSpace(String fileAsString) {
-        String newLineRemove = fileAsString.trim().replace("\n", " ").replace("\r", "");
-        String spaceRemove = newLineRemove.replaceAll("\\s+", " ").trim();
-
-        return spaceRemove;
+    private String removePunctuation(String text) {
+        return text.replaceAll("\\p{Punct}", " ");
     }
 
-    public String removeKeyword(String fileAsString) throws FileNotFoundException, IOException {
-        ArrayList<String> keyWordList = new ArrayList<>();
-        ArrayList<String> methodContentList = new ArrayList<>();
-        FileInputStream fis = new FileInputStream("H:\\2-1\\Coding_Helper\\keyword.java"); //keyword.java is a file which contains all keyword
-        byte[] b = new byte[fis.available()];
-        fis.read(b);
+    private String removeExtraSpaces(String text) {
+        return text.trim().replace("\n", " ").replace("\r", "").replaceAll("\\s+", " ");
+    }
 
-        String[] keyword = new String(b).trim().split(" ");
-        String newString = " ";
-        for (int i = 0; i < keyword.length; i++) {
-            keyWordList.add(keyword[i].trim());
+    private String removeKeywords(String content) throws IOException {
+        Set<String> keywords = loadKeywords();
+        StringBuilder result = new StringBuilder();
 
-        }
-        String[] p = fileAsString.split(" ");
-        for (int i = 0; i < p.length; i++) {
-            if (!(keyWordList.contains(p[i].trim()))) {
-                newString = newString + p[i] + " ";
-
+        for (String word : content.split(" ")) {
+            if (!keywords.contains(word.trim())) {
+                result.append(word).append(" ");
             }
         }
-        return newString;
+
+        return result.toString().trim();
+    }
+
+    private Set<String> loadKeywords() throws IOException {
+        Set<String> keywords = new HashSet<>();
+        try (FileInputStream fis = new FileInputStream("H:\\2-1\\Coding_Helper\\keyword.java")) {
+            byte[] bytes = fis.readAllBytes();
+            for (String keyword : new String(bytes).trim().split(" ")) {
+                keywords.add(keyword.trim());
+            }
+        }
+        return keywords;
+    }
+
+    private String stemWords(String content) {
+        Porter_stemmer stemmer = new Porter_stemmer();
+        StringBuilder stemmedContent = new StringBuilder();
+
+        for (String word : content.split(" ")) {
+            stemmedContent.append(stemmer.stemWord(word)).append(" ");
+        }
+
+        return stemmedContent.toString().trim();
     }
 }
